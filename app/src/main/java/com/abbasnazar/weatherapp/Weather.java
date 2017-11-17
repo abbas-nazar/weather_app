@@ -6,6 +6,6 @@ package com.abbasnazar.weatherapp;
 
 public class Weather
 {
-    String name,min,max,average,main;
+    String name,min,max,average,main,pressure,humidity;
     byte[] icon;
 }

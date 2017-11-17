@@ -23,6 +23,8 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -35,19 +37,23 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
+import static java.security.AccessController.getContext;
+
 public class MainActivity extends AppCompatActivity {
 
-    ProgressBar bar;
     ListView list;
     ArrayList<RowItem> rowitems;
     String key="&appid=41401b36116d0ee4c2fdbef310679323";
     SharedPreferences sharedPreferences;
     String city,tempUnit;
     private static String BASE_URL = "http://api.openweathermap.org/data/2.5/weather?q=";
+    private static String multiweather="http//api.openweathermap.org/data/2.5/forecast/daily?q=";
     private static String IMG_URL = "http://openweathermap.org/img/w/";
+    String cnt ="&cnt=7";
     Weather w=new Weather();;
 
     TextView cityname,temp,main,day;
+    ImageView icon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +72,8 @@ public class MainActivity extends AppCompatActivity {
         cityname=(TextView)findViewById(R.id.city);
         main=(TextView)findViewById(R.id.condition);
         day=(TextView)findViewById(R.id.current);
+
+        icon=(ImageView)findViewById(R.id.imageView);
 
 
         /*if(city.equals(""))
@@ -146,11 +154,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public byte[] getImage(String code) {
+   /* public Bitmap getImage(String code) {
         HttpURLConnection con = null ;
         InputStream is = null;
         try {
-            con = (HttpURLConnection) ( new URL(IMG_URL + code)).openConnection();
+            con = (HttpURLConnection) ( new URL(IMG_URL + code+".png")).openConnection();
             con.setRequestMethod("GET");
             con.setDoInput(true);
             con.setDoOutput(true);
@@ -158,13 +166,13 @@ public class MainActivity extends AppCompatActivity {
 
             // Let's read the response
             is = con.getInputStream();
-            byte[] buffer = new byte[1024];
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(is);
+            return myBitmap;
 
-            while ( is.read(buffer) != -1)
+            *//*while ( is.read(buffer) != -1)
                 baos.write(buffer);
 
-            return baos.toByteArray();
+            return baos.toByteArray();*//*
         }
         catch(Throwable t) {
             t.printStackTrace();
@@ -176,10 +184,11 @@ public class MainActivity extends AppCompatActivity {
 
         return null;
 
-    }
+    }*/
 
     private class Weathercheck extends AsyncTask<String, Integer, Weather> {
         String icon;
+        Bitmap a;
         ProgressDialog progress;
 
         public Weathercheck(Activity a)
@@ -199,25 +208,27 @@ public class MainActivity extends AppCompatActivity {
             try {
                 JSONObject obj=new JSONObject(data);
                 w.name=obj.getString("name");
-                //Log.d("assassin",obj.getString("name"));
                 JSONArray arr=obj.getJSONArray("weather");
                 JSONObject o=arr.getJSONObject(0);
                 w.main=o.getString("main");
-                //Log.d("assassin",o.toString());
                 JSONObject t=obj.getJSONObject("main");
-                Log.d("assassin",t.toString());
                 w.average=t.getString("temp");
                 w.min=t.getString("temp_min");
                 w.max=t.getString("temp_max");
+                w.pressure=t.getString("pressure");
+                w.humidity=t.getString("humidity");
                 icon=o.getString("icon");
-                Log.d("asfand",w.max);
-
+                w.name+=","+obj.getJSONObject("sys").getString("country");
+                Log.d("assassin",w.name);
+                String cod=obj.getJSONObject("sys").getString("cod");
+                String s=getWeatherData(w.name+","+cod);
+                Log.d("assassin",cod);
             }
             catch (Exception e)
             {
 
             }
-            w.icon=getImage(icon);
+          /* a=getImage(icon);*/
             return w;
         }
 
@@ -228,15 +239,16 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Weather result)
         {
             progress.dismiss();
-            update();
+            update(icon);
         }
     }
 
-    public void update()
+    public void update(String url)
     {
         temp.setText(w.average);
         main.setText(w.main);
         cityname.setText(w.name);
+        Picasso.with(getApplication()).load(IMG_URL+url+".png").fit().into(icon);
     }
 
 }
