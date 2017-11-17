@@ -43,17 +43,19 @@ public class MainActivity extends AppCompatActivity {
 
     ListView list;
     ArrayList<RowItem> rowitems;
-    String key="&appid=41401b36116d0ee4c2fdbef310679323";
+    String key="&appid=ea574594b9d36ab688642d5fbeab847e";
     SharedPreferences sharedPreferences;
     String city,tempUnit;
     private static String BASE_URL = "http://api.openweathermap.org/data/2.5/weather?q=";
-    private static String multiweather="http//api.openweathermap.org/data/2.5/forecast/daily?q=";
+    private static String multiweather="http://api.openweathermap.org/data/2.5/forecast/daily?q=";
     private static String IMG_URL = "http://openweathermap.org/img/w/";
     String cnt ="&cnt=7";
     Weather w=new Weather();;
-
+    ArrayList<Weather> weather;
     TextView cityname,temp,main,day;
     ImageView icon;
+    String nameC;
+    JSONArray arr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        fillArray();
+        //fillArray();
 
         CustomAdapter adapter=new CustomAdapter(getApplicationContext(),rowitems);
         list.setAdapter(adapter);
@@ -99,19 +101,21 @@ public class MainActivity extends AppCompatActivity {
 
     private void fillArray()
     {
-        for (int i=0;i<6;i++)
+        for (int i=0;i<weather.size();i++)
         {
             RowItem row=new RowItem();
             row.heading="heading "+i;
-            row.subHeading="Sub heading "+i;
-            row.temp="40";
+            row.subHeading=weather.get(i).main;
+            row.temp=weather.get(i).average;
+            row.image=weather.get(i).icon;
             rowitems.add(row);
+            //Log.d("tayyab",""+weather.size());
         }
     }
 
     private void TempCheck(String c)
     {
-
+        weather=new ArrayList<Weather>();
         Weathercheck weathercheck=new Weathercheck(MainActivity.this);
         weathercheck.execute(c);
 
@@ -119,12 +123,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public String getWeatherData(String location) {
+    public String getWeatherData(String location,String url) {
         HttpURLConnection con = null ;
         InputStream is = null;
 
         try {
-            con = (HttpURLConnection) ( new URL(BASE_URL + location+key)).openConnection();
+            con = (HttpURLConnection) ( new URL(url + location+key)).openConnection();
             con.setRequestMethod("GET");
             con.setDoInput(true);
             con.setDoOutput(true);
@@ -204,25 +208,17 @@ public class MainActivity extends AppCompatActivity {
         }
         protected Weather doInBackground(String... strng) {
 
-            String data=getWeatherData(strng[0]);
+            String data=getWeatherData(strng[0],BASE_URL);
             try {
                 JSONObject obj=new JSONObject(data);
-                w.name=obj.getString("name");
-                JSONArray arr=obj.getJSONArray("weather");
-                JSONObject o=arr.getJSONObject(0);
-                w.main=o.getString("main");
-                JSONObject t=obj.getJSONObject("main");
-                w.average=t.getString("temp");
-                w.min=t.getString("temp_min");
-                w.max=t.getString("temp_max");
-                w.pressure=t.getString("pressure");
-                w.humidity=t.getString("humidity");
-                icon=o.getString("icon");
-                w.name+=","+obj.getJSONObject("sys").getString("country");
-                Log.d("assassin",w.name);
-                String cod=obj.getJSONObject("sys").getString("cod");
-                String s=getWeatherData(w.name+","+cod);
-                Log.d("assassin",cod);
+                nameC=obj.getString("name");
+                nameC+=","+obj.getJSONObject("sys").getString("country");
+
+                String s=getWeatherData(nameC,multiweather);
+                JSONObject mulObj=new JSONObject(s);
+                arr=mulObj.getJSONArray("list");
+
+                //Log.d("assassin",arr.toString());
             }
             catch (Exception e)
             {
@@ -238,17 +234,40 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(Weather result)
         {
+            update();
             progress.dismiss();
-            update(icon);
         }
     }
 
-    public void update(String url)
+    public void update()
     {
-        temp.setText(w.average);
-        main.setText(w.main);
-        cityname.setText(w.name);
-        Picasso.with(getApplication()).load(IMG_URL+url+".png").fit().into(icon);
+        for (int i=1;i<arr.length();i++)
+        {
+            try {
+                Weather w=new Weather();
+                JSONObject temp=arr.getJSONObject(i);
+                w.min=temp.getJSONObject("temp").getString("min");
+                w.max=temp.getJSONObject("temp").getString("max");
+                w.average=""+((Double.parseDouble(w.min)+Double.parseDouble(w.max))/2);
+                w.main=temp.getJSONArray("weather").getJSONObject(0).getString("main");
+                w.icon=temp.getJSONArray("weather").getJSONObject(0).getString("icon");
+                w.pressure=temp.getString("pressure");
+                w.humidity=temp.getString("humidity");
+                weather.add(w);
+                //Log.d("tayab",""+arr.length());
+            }
+            catch (Exception e)
+            {
+                Log.d("Templar",e.toString());
+            }
+
+        }
+        fillArray();
+
+        temp.setText(weather.get(0).average);
+        main.setText(weather.get(0).main);
+        cityname.setText(nameC);
+        Picasso.with(getApplication()).load(IMG_URL+weather.get(0).icon+".png").fit().into(icon);
     }
 
 }

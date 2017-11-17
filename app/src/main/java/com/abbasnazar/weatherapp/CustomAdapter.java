@@ -8,6 +8,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
 
 /**
@@ -55,7 +57,7 @@ public class CustomAdapter extends BaseAdapter
                 heading.setText(item.heading);
                 subheading.setText(item.subHeading);
                 temp.setText(item.temp+" C");
-                image.setImageResource(R.drawable.a);
+                Picasso.with(view.getContext()).load("http://openweathermap.org/img/w/"+item.image+".png").fit().into(image);
 
             }
         return view;
