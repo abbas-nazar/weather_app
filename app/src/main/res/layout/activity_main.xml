@@ -48,8 +48,8 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         app:srcCompat="@mipmap/ic_launcher_round"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="8dp"
@@ -81,6 +81,7 @@
             android:layout_width="24dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:onClick="settings"
             android:background="@drawable/ic_settings_applications_black_24dp" />
 
         <Button
@@ -96,7 +97,8 @@
             android:layout_width="24dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/ic_menu_black_24dp" />
+            android:background="@drawable/ic_menu_black_24dp"
+            android:onClick="details"/>
 
         <Button
             android:id="@+id/button5"
@@ -111,6 +113,7 @@
             android:background="@drawable/ic_refresh_black_24dp"
             android:layout_width="24dp"
             android:layout_height="wrap_content"
+            android:onClick="refresh"
             android:layout_weight="1" />
     </LinearLayout>
 
@@ -135,7 +138,7 @@
 
     <ListView
         android:id="@+id/weatherlist"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="291dp"
         android:layout_marginBottom="-79dp"
         android:background="#ffffff"

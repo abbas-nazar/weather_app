@@ -17,6 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView icon;
     String nameC;
     JSONArray arr;
-
+    Intent io;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +67,8 @@ public class MainActivity extends AppCompatActivity {
         list=(ListView)findViewById(R.id.weatherlist);
 
         //bar=(ProgressBar)findViewById(R.id.progressBar);
+
+        io=new Intent(this,detail.class);
 
         sharedPreferences= PreferenceManager.getDefaultSharedPreferences(this);
         city=sharedPreferences.getString("city","");
@@ -97,6 +100,23 @@ public class MainActivity extends AppCompatActivity {
 
         CustomAdapter adapter=new CustomAdapter(getApplicationContext(),rowitems);
         list.setAdapter(adapter);
+
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l)
+            {
+
+                io.putExtra("day",rowitems.get(i).heading);
+                io.putExtra("min",weather.get(i+1).min);
+                io.putExtra("max",weather.get(i+1).max);
+                io.putExtra("ave",weather.get(i+1).average);
+                io.putExtra("main",weather.get(i+1).main);
+                io.putExtra("humidity",weather.get(i+1).humidity);
+                io.putExtra("pressure",weather.get(i+1).humidity);
+                io.putExtra("icon",weather.get(i+1).icon);
+                startActivity(io);
+            }
+        });
     }
 
     private void fillArray()
@@ -156,6 +176,34 @@ public class MainActivity extends AppCompatActivity {
 
         return null;
 
+    }
+
+    public void settings(View view)
+    {
+        Intent i=new Intent(this, setting.class);
+        startActivity(i);
+    }
+
+    public void details(View view)
+    {
+        Intent i=new Intent(this,detail.class);
+        i.putExtra("day",day.getText());
+        i.putExtra("min",weather.get(0).min);
+        i.putExtra("max",weather.get(0).max);
+        i.putExtra("ave",weather.get(0).average);
+        i.putExtra("main",weather.get(0).main);
+        i.putExtra("humidity",weather.get(0).humidity);
+        i.putExtra("pressure",weather.get(0).humidity);
+        i.putExtra("icon",weather.get(0).icon);
+        startActivity(i);
+
+
+
+    }
+
+    public void refresh(View view)
+    {
+        TempCheck(city);
     }
 
    /* public Bitmap getImage(String code) {
@@ -247,8 +295,11 @@ public class MainActivity extends AppCompatActivity {
                 Weather w=new Weather();
                 JSONObject temp=arr.getJSONObject(i);
                 w.min=temp.getJSONObject("temp").getString("min");
+                w.min=w.min.substring(0,Math.min(w.min.length(),6));
                 w.max=temp.getJSONObject("temp").getString("max");
+                w.max=w.max.substring(0,Math.min(w.max.length(),6));
                 w.average=""+((Double.parseDouble(w.min)+Double.parseDouble(w.max))/2);
+                w.average=w.average.substring(0,Math.min(w.average.length(),6));
                 w.main=temp.getJSONArray("weather").getJSONObject(0).getString("main");
                 w.icon=temp.getJSONArray("weather").getJSONObject(0).getString("icon");
                 w.pressure=temp.getString("pressure");
