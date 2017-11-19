@@ -3,11 +3,14 @@ package com.abbasnazar.weatherapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -23,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -36,7 +40,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import static java.security.AccessController.getContext;
 
@@ -53,9 +60,11 @@ public class MainActivity extends AppCompatActivity {
     String cnt ="&cnt=7";
     Weather w=new Weather();;
     ArrayList<Weather> weather;
-    TextView cityname,temp,main,day;
+    TextView cityname,temp,main,Day;
     ImageView icon;
     String nameC;
+    CustomAdapter adapter;
+    Calendar calendar = Calendar.getInstance();
     JSONArray arr;
     Intent io;
     @Override
@@ -76,19 +85,10 @@ public class MainActivity extends AppCompatActivity {
         temp=(TextView)findViewById(R.id.temp);
         cityname=(TextView)findViewById(R.id.city);
         main=(TextView)findViewById(R.id.condition);
-        day=(TextView)findViewById(R.id.current);
+        Day=(TextView)findViewById(R.id.current);
 
         icon=(ImageView)findViewById(R.id.imageView);
 
-
-        /*if(city.equals(""))
-        {
-            Intent i=new Intent(this, setting.class);
-            startActivity(i);
-
-        }*/
-
-        TempCheck("islamabad");
         ImageView im=(ImageView) findViewById(R.id.imageView);
         /*Bitmap bmp = BitmapFactory.decodeByteArray(w.icon, 0, w.icon.length);
         im.setImageBitmap(Bitmap.createScaledBitmap(bmp, im.getWidth(),
@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
 
         //fillArray();
 
-        CustomAdapter adapter=new CustomAdapter(getApplicationContext(),rowitems);
+        adapter=new CustomAdapter(getApplicationContext(),rowitems);
         list.setAdapter(adapter);
 
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -107,13 +107,13 @@ public class MainActivity extends AppCompatActivity {
             {
 
                 io.putExtra("day",rowitems.get(i).heading);
-                io.putExtra("min",weather.get(i+1).min);
-                io.putExtra("max",weather.get(i+1).max);
-                io.putExtra("ave",weather.get(i+1).average);
-                io.putExtra("main",weather.get(i+1).main);
-                io.putExtra("humidity",weather.get(i+1).humidity);
-                io.putExtra("pressure",weather.get(i+1).humidity);
-                io.putExtra("icon",weather.get(i+1).icon);
+                io.putExtra("min",getTemp(weather.get(i).min));
+                io.putExtra("max",getTemp(weather.get(i).max));
+                io.putExtra("ave",getTemp(weather.get(i).average));
+                io.putExtra("main",weather.get(i).main);
+                io.putExtra("humidity",weather.get(i).humidity);
+                io.putExtra("pressure",weather.get(i).pressure);
+                io.putExtra("icon",weather.get(i).icon);
                 startActivity(io);
             }
         });
@@ -121,12 +121,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void fillArray()
     {
+        rowitems=new ArrayList<RowItem>();
+        adapter=new CustomAdapter(getApplicationContext(),rowitems);
+        list.setAdapter(adapter);
+
         for (int i=0;i<weather.size();i++)
         {
             RowItem row=new RowItem();
-            row.heading="heading "+i;
+            row.heading=getDay(i+1);
             row.subHeading=weather.get(i).main;
-            row.temp=weather.get(i).average;
+            row.temp=getTemp(weather.get(i).average);
             row.image=weather.get(i).icon;
             rowitems.add(row);
             //Log.d("tayyab",""+weather.size());
@@ -135,10 +139,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void TempCheck(String c)
     {
-        weather=new ArrayList<Weather>();
-        Weathercheck weathercheck=new Weathercheck(MainActivity.this);
-        weathercheck.execute(c);
+        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED)
+        {
+            weather=new ArrayList<Weather>();
+            Weathercheck weathercheck=new Weathercheck(MainActivity.this);
+            weathercheck.execute(c);
 
+        }
+        else
+        {
+            Toast.makeText(getApplicationContext(),"Please Check your internet connection",Toast.LENGTH_SHORT).show();
+        }
 
     }
 
@@ -187,13 +200,13 @@ public class MainActivity extends AppCompatActivity {
     public void details(View view)
     {
         Intent i=new Intent(this,detail.class);
-        i.putExtra("day",day.getText());
-        i.putExtra("min",weather.get(0).min);
-        i.putExtra("max",weather.get(0).max);
-        i.putExtra("ave",weather.get(0).average);
+        i.putExtra("day",Day.getText());
+        i.putExtra("min",getTemp(weather.get(0).min));
+        i.putExtra("max",getTemp(weather.get(0).max));
+        i.putExtra("ave",getTemp(weather.get(0).average));
         i.putExtra("main",weather.get(0).main);
         i.putExtra("humidity",weather.get(0).humidity);
-        i.putExtra("pressure",weather.get(0).humidity);
+        i.putExtra("pressure",weather.get(0).pressure);
         i.putExtra("icon",weather.get(0).icon);
         startActivity(i);
 
@@ -251,6 +264,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
 
             progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progress.setMessage("Fetching Data");
             progress.setIndeterminate(true);
             progress.show();
         }
@@ -315,10 +329,55 @@ public class MainActivity extends AppCompatActivity {
         }
         fillArray();
 
-        temp.setText(weather.get(0).average);
+        temp.setText(getTemp(weather.get(0).average));
         main.setText(weather.get(0).main);
         cityname.setText(nameC);
+        Day.setText(getDay(0));
         Picasso.with(getApplication()).load(IMG_URL+weather.get(0).icon+".png").fit().into(icon);
     }
 
+    public String getDay(int d)
+    {
+         SimpleDateFormat sdf = new SimpleDateFormat("EEEE");
+            Calendar calendar = new GregorianCalendar();
+            calendar.add(Calendar.DATE, d);
+            String day = sdf.format(calendar.getTime());
+        return  day;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        city=sharedPreferences.getString("city","");
+        tempUnit=sharedPreferences.getString("temp","cel");
+        if(city.equals(""))
+        {
+            Intent i=new Intent(this, setting.class);
+            startActivity(i);
+
+        }
+        else
+        {
+            TempCheck(city);
+        }
+    }
+
+    public String getTemp(String t)
+    {
+        Double temp=Double.parseDouble(t);
+            temp=temp-273.15;
+
+
+        if(tempUnit.equals("cel"))
+        {
+            int T=temp.intValue();
+            return T+" °C";
+        }
+        else
+        {
+            temp=(temp * 9.0/5.0) + 32.0;
+            int T=temp.intValue();
+            return T+" °F";
+        }
+    }
 }

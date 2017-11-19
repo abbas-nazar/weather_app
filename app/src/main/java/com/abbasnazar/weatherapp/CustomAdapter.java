@@ -49,14 +49,14 @@ public class CustomAdapter extends BaseAdapter
             {
                 view=layoutInflater.inflate(R.layout.listview_row,viewGroup,false);
                 ImageView image=(ImageView)view.findViewById(R.id.status);
-                TextView heading=(TextView) view.findViewById(R.id.headuing);
+                TextView heading=(TextView) view.findViewById(R.id.linearLayout2);
                 TextView subheading=(TextView) view.findViewById(R.id.subheading);
                 TextView temp=(TextView) view.findViewById(R.id.temp);
 
                 RowItem item=(RowItem) getItem(i);
                 heading.setText(item.heading);
                 subheading.setText(item.subHeading);
-                temp.setText(item.temp+" C");
+                temp.setText(item.temp);
                 Picasso.with(view.getContext()).load("http://openweathermap.org/img/w/"+item.image+".png").fit().into(image);
 
             }

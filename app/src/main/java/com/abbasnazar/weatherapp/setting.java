@@ -2,14 +2,21 @@ package com.abbasnazar.weatherapp;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -28,15 +35,38 @@ public class setting extends AppCompatActivity {
     String key="&appid=ea574594b9d36ab688642d5fbeab847e";
     EditText city;
     Spinner spinner;
-    String c,t;
+    String c,t="cel";
     String data;
+    RadioGroup group;
+    RadioButton r,r2;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
         sharedPreferences= PreferenceManager.getDefaultSharedPreferences(this);
-
+        editor=sharedPreferences.edit();
         city=(EditText)findViewById(R.id.editCity);
+        group=(RadioGroup) findViewById(R.id.group);
+
+        c=sharedPreferences.getString("city","");
+        t=sharedPreferences.getString("temp","cel");
+        r=(RadioButton)findViewById(R.id.far);
+        r2=(RadioButton)findViewById(R.id.cel);
+
+        group.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, @IdRes int i) {
+                if(i==R.id.far)
+                {
+                    t="far";
+                }
+                else
+                {
+                    t="cel";
+                }
+            }
+        });
     }
 
     public String getWeatherData(String location,String url) {
@@ -64,7 +94,7 @@ public class setting extends AppCompatActivity {
             return buffer.toString();
         }
         catch(Exception e) {
-            data="filenotfound";
+            Throwable t;
         }
         finally {
             try { is.close(); } catch(Throwable t) {}
@@ -77,8 +107,16 @@ public class setting extends AppCompatActivity {
 
     public void check(View view)
     {
-        Weathercheck w=new Weathercheck(setting.this);
-        w.execute(city.getText().toString());
+        ConnectivityManager connectivityManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
+                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
+            Weathercheck w = new Weathercheck(setting.this);
+            w.execute(city.getText().toString());
+        }
+        else
+        {
+            Toast.makeText(getApplicationContext(),"Please Check your internet connection",Toast.LENGTH_SHORT).show();
+        }
     }
     public void showResult()
     {
@@ -123,6 +161,20 @@ public class setting extends AppCompatActivity {
         {
             progress.dismiss();
             showResult();
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        city.setText(c);
+        if(t.equals("cel"))
+        {
+            r2.setChecked(true);
+        }
+        else
+        {
+            r.setChecked(true);
         }
     }
 }
